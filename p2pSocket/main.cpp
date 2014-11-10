@@ -1,54 +1,50 @@
 #include <iostream>
 #include "p2psock.hpp"
-     
+
 #define CLIENT
 #ifndef CLIENT
 #include <string>
 int main(int argc, char* argv) {
-        try     {
-                char* snt;
-                char c[4];
-				std::string text;
-     
-                p2p::initiate();
-                int handle = p2p::createSocket(p2p::P2P_IPV4 | p2p::P2P_TCP | p2p::P2P_CLIENT);
-                p2p::socketConnect(handle, "71.83.101.177");
-                bool sentinel = true;
-     
-                while(sentinel) {
+    try {
+        char* snt;
+        char c[4];
+        std::string text;
 
-						std::cin >> text;
-                        unsigned int length = text.length();
+        p2p::initiate();
+        int handle = p2p::createSocket(p2p::P2P_IPV4 | p2p::P2P_TCP | p2p::P2P_CLIENT);
+        p2p::socketConnect(handle, "71.83.101.177");
+        bool sentinel = true;
 
-						snt = new(char[length + 1]);
+        while(sentinel) {
+            std::cin >> text;
+            unsigned int length = text.length();
+            snt = new(char[length + 1]);
 
-						for(unsigned int counter = 0; counter < length; ++counter) {
-							snt[counter] = text[counter];
-						}
+            for(unsigned int counter = 0; counter < length; ++counter) {
+                snt[counter] = text[counter];
+            }
 
-						snt[length] = '\0';
+            snt[length] = '\0';
 
-                        for(int it = 0; it < 4; it += 1) {
-                                c[it] = char(0xFF & (length >> (it * 8)));
-                        }
-     
-     
-                        p2p::write(handle, c, 4);
-                        p2p::write(handle, snt, strlen(snt));
-                        if(snt == "quit")
-							sentinel = false;
+            for(int it = 0; it < 4; it += 1) {
+                c[it] = char(0xFF & (length >> (it * 8)));
+            }
 
-						delete snt;
-						text.clear();
-                }
-     
-                p2p::shutdownNetwork();
-     
+            p2p::write(handle, c, 4);
+            p2p::write(handle, snt, strlen(snt));
+
+            if(snt == "quit")
+                sentinel = false;
+
+            delete snt;
+            text.clear();
         }
-        catch(const char* e) {
-                std::cout << e << "\n";
-                p2p::shutdownNetwork();
-        }
+        p2p::shutdownNetwork();
+    }
+    catch(const char* e) {
+        std::cout << e << "\n";
+        p2p::shutdownNetwork();
+    }
     return 0;
 }
 #else
@@ -57,7 +53,7 @@ int main(int argc, char* argv) {
         char* snt;
         char* c;
         unsigned int i = 0x00000000;
-     
+
         p2p::initiate();
         int temp = p2p::createSocket(p2p::P2P_IPV4 | p2p::P2P_TCP | p2p::P2P_HOST);
         p2p::socketBind(temp);
@@ -65,38 +61,36 @@ int main(int argc, char* argv) {
         int handle = p2p::socketAccept(temp);
         p2p::destroySocket(temp);
         bool sentinel = true;
-		std::cout << "Connected - P2P System Initiated...." << std::endl;
+        std::cout << "Connected - P2P System Initiated...." << std::endl;
 
         while(sentinel) {
-			// Set i equal to the number of chars in next string:
-			c = new(char[4]);
+            // Set i equal to the number of chars in next string:
+            c = new(char[4]);
             p2p::read(handle, c, 4);
+
             for(int it = 3; it > -1; it -= 1) {
-                    i |= unsigned int(c[it]);        // possible type cast needed?
-                    i <<= (it * 8);
+                i |= unsigned int(c[it]);
+                i <<= (it * 8);
             }
 
-
-			std::cout << "Read " << i << " Bytes" << std::endl;
-			snt = new(char[i + 1]);
+            std::cout << "Read " << i << " Bytes" << std::endl;
+            snt = new(char[i + 1]);
             p2p::read(handle, snt, i);
-			snt[i] = '\0';
+            snt[i] = '\0';
             std::cout << snt << std::endl;;
-     
-            if(snt == "quit") {
-                    sentinel = false;
-            }
 
-			delete c;
-			delete snt;
-			i = 0;
+            if(snt == "quit")
+                sentinel = false;
+
+            delete c;
+            delete snt;
+            i = 0;
         }
-     
         p2p::shutdownNetwork();
         return 0;
     }
     catch(const char* e) {
-		std::cout << e << std::endl;
+        std::cout << e << std::endl;
         p2p::shutdownNetwork();
     }
 }
